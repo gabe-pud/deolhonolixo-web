@@ -1,9 +1,15 @@
+import { Aside } from "./components/Aside"
+import { Container } from "./components/Container"
+import { Mapa } from "./components/Mapa"
 
 function App() {
 
   return (
-    <div className="bg-purple-500 min-h-screen">
- 
+    <div className="min-h-screen">
+      <Container>
+        <Aside />
+        <Mapa/>
+      </Container>
     </div>
   )
 }
