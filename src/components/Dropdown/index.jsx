@@ -16,7 +16,7 @@ export const Dropdown = ({ onSelect }) => {
     "Canto do Forte", "Boqueirão", "Guilhermina", "Aviação", "Tupi", "Ocian",
     "Mirim", "Maracanã", "Caiçara", "Real", "Flórida", "Solemar", "Melvi",
     "Nova Mirim", "Anhanguera", "Quietude", "Tupiry", "Santa Marina", "Antártica",
-    "Vila Sônia", "Glória", "Sítio do Campo", "Xixová"
+    "Vila Sônia", "Glória", "Sítio do Campo"
   ];
 
   // O useEffect aqui serve para configurar um "vigia" no navegador assim que o componente aparece.
@@ -54,7 +54,7 @@ export const Dropdown = ({ onSelect }) => {
     <div className="relative inline-block text-left" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="ml-[28px] mr-[28px] mt-[44px] w-[500px] bg-transparent border border-[#A7A7A7] rounded-[14px] text-[24px] font-medium leading-[140%] flex items-center py-[22px] justify-center hover:border-[#7083D9] cursor-pointer tracking-tight"
+        className="ml-[28px] mr-[28px] mt-[60px] w-[500px] bg-transparent border border-[#A7A7A7] rounded-[14px] text-[24px] font-medium leading-[140%] flex items-center py-[22px] justify-center hover:border-[#7083D9] cursor-pointer tracking-tight"
       >
         {/* O texto do botão é dinâmico */}
         {selectedBairro}
