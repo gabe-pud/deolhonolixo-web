@@ -12,7 +12,7 @@ export const Footer = () => {
         <div className="flex gap-[10px] text-[20px] tracking-tight justify-center font-bold">
           <p className="text-[#5C5C5C]">Precisa de ajuda?</p>
           <p
-            className="text-[#7083D9] cursor-pointer"
+            className="text-[#7083D9] cursor-pointer hover:underline"
             onClick={() => setIsOpen(true)}
           >
             Clique aqui
@@ -53,8 +53,8 @@ export const Footer = () => {
                 Para acessar o Menu Opções, clique no ícone de hambúrguer (três linhas horizontais) localizado no canto superior direito da tela. A partir daí, você pode navegar para diferentes seções do site.
               </p>
               <p>
-                <strong>3. Criar um lembrete: <br /></strong>
-                Crie um alerta personalizado para te lembrar a data e hora da coleta do bairro desejado, selecione a opção <strong>"Crie um alerta para lembrar"</strong> no Menu Principal e configure o lembrete de acordo com as suas preferências.
+                <strong>3. App na palma da mão: <br /></strong>
+                Baixe nosso App e crie um alerta personalizado para te lembrar a data e hora da coleta do bairro desejado, selecione a opção <strong>"Baixe nosso novo App"</strong> no Menu Principal e após abrir o aplicativo, configure o lembrete de acordo com as suas preferências.
               </p>
               <p>
                 <strong>4. Contatar o suporte: <br /></strong>
