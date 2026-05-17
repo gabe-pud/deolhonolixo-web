@@ -2,25 +2,25 @@ import { useEffect, useState } from "react"
 
 const horariosColeta = {
   manhaSegQuaSex: {
-    bairros: ["Aviação", "Boqueirão", "Tupi", "Canto do Forte", "Guilhermina", "Sítio do Campo"],
+    bairros: ["Aviação", "Boqueirão", "Tupi", "Canto do Forte", "Guilhermina", "Sítio do Campo", "aviacao", "boqueirao", "tupi", "canto do forte", "guilhermina", "sitio do campo"],
     horaInicio: 8,
     horaFim: 12,
     dias: [1, 3, 5] // segunda, quarta, sexta
   },
   tardeSegQuaSex: {
-    bairros: ["Solemar", "Esmeralda", "Flórida", "Melvi", "Princesa", "Ribeirópolis", "Samambaia", "Cidade da Criança", "Sítio do Campo"],
+    bairros: ["Solemar", "Esmeralda", "Flórida", "Melvi", "Princesa", "Ribeirópolis", "Samambaia", "Cidade da Criança", "Sítio do Campo", "solemar", "esmeralda", "florida", "melvi", "princesa", "ribeiropolis", "samambaia", "cidade da crianca", "sitio do campo"],
     horaInicio: 13,
     horaFim: 18,
     dias: [1, 3, 5]
   },
   manhaTerQui: {
-    bairros: ["Caiçara", "Maracanã", "Mirim", "Ocian", "Real"],
+    bairros: ["Caiçara", "Maracanã", "Mirim", "Ocian", "Real", "caicara", "maracana", "mirim", "ocian", "real"],
     horaInicio: 8,
     horaFim: 12,
     dias: [2, 4] // terça, quinta
   },
   tardeTerQui: {
-    bairros: ["Anhanguera", "Antártica", "Glória", "Nova Mirim", "Quietude", "Santa Marina", "Tupiry", "Vila Sônia", "Sítio do Campo"],
+    bairros: ["Anhanguera", "Antártica", "Glória", "Nova Mirim", "Quietude", "Santa Marina", "Tupiry", "Vila Sônia", "Sítio do Campo", "anhanguera", "antartica", "gloria", "nova mirim", "quietude", "santa marina", "tupiry", "vila sonia", "sitio do campo"],
     horaInicio: 13,
     horaFim: 18,
     dias: [2, 4]

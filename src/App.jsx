@@ -6,6 +6,7 @@ import { useState } from "react"
 import 'leaflet/dist/leaflet.css';
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom"
 import { Login } from "./components/Login"
+import { Register } from "./components/Register"
 
 function App() {
   const [bairroSelecionado, setBairroSelecionado] = useState("")
@@ -31,6 +32,9 @@ function App() {
 
           {/* Tela de login */}
           <Route path="/login" element={<Login />} />
+
+          {/* Tela de registro */}
+          <Route path="/register" element={<Register />} />
         </Routes>
       </div>
     </Router>
