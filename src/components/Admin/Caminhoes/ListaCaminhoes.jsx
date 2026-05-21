@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { truckService } from '../../../services/truckService'
 
+// Ícones roxos (#7083D9) (estado normal)
+import truckPurple from "../../../assets/svg/truckPurple.svg"
+
 const TruckCard = ({ truck, onVerHistorico }) => {
     const getStatusColor = (status) => {
         if (status === 'parado') return 'bg-orange-100 text-orange-700'
@@ -12,7 +15,11 @@ const TruckCard = ({ truck, onVerHistorico }) => {
         <div className="bg-white p-4 rounded-lg shadow border-l-4 border-[#7083D9]">
             <div className="flex justify-between items-start mb-3">
                 <div>
-                    <h3 className="font-bold text-lg text-gray-800">🚛 {truck.licensePlate}</h3>
+                    <h3 className="font-bold text-lg text-gray-800 flex items-center gap-2">
+                        <img src={truckPurple} alt="Caminhão" className="w-6 h-6" />
+                        {truck.licensePlate}
+                    </h3>
+
                     {truck.status && (
                         <span className={`inline-block mt-2 px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(truck.status)}`}>
                             {truck.status}

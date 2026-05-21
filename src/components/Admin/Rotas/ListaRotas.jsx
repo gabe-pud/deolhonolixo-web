@@ -1,10 +1,18 @@
 import React, { useState, useEffect } from 'react'
 import { routeService } from '../../../services/routeService'
 
+// Ícones roxos (#7083D9) (estado normal)
+import mapPurple from "../../../assets/svg/mapPurple.svg"
+
+
 const RouteCard = ({ route, onVerRota }) => {
     return (
         <div className="bg-white p-4 rounded-lg shadow border-l-4 border-[#7083D9]">
-            <h3 className="font-bold text-lg text-gray-800 mb-2">🗺️ Rota #{route.routeId}</h3>
+            <h3 className="font-bold text-lg text-gray-800 mb-2 flex items-center gap-2">
+                <img src={mapPurple} alt="Mapa" className="w-6 h-6" />
+                Rota #{route.routeId}
+            </h3>
+
 
             <div className="text-sm text-gray-600 space-y-1 mb-4">
                 <p><strong>Nome:</strong> {route.routeName || 'N/A'}</p>

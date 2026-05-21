@@ -31,17 +31,20 @@ export const Admin = () => {
             </header>
 
             {/* Main Content */}
-            <div className="flex flex-1 overflow-hidden">
+            <div className="flex flex-1 overflow-hidden ">
                 {/* Lado Esquerdo - Painel Admin */}
-                <div className="w-1/2 overflow-y-auto border-r border-gray-300">
+                <div className="w-1/2 overflow-y-auto border-r border-gray-300 shadow-[10px_0px_10px_-3px_rgba(0,0,0,0.3)] relative z-20">
                     <PainelAdministrativo onMapConfigChange={setMapConfig} />
                 </div>
 
                 {/* Lado Direito - Mapa */}
-                <div className="w-1/2 overflow-hidden ">
+                <div className="w-1/2 overflow-hidden relative z-10">
                     <MapaAdmin mapConfig={mapConfig} />
                 </div>
+
             </div>
         </div>
     )
 }
+
+// 

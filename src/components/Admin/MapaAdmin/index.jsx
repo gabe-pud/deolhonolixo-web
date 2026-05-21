@@ -40,7 +40,7 @@ export const MapaAdmin = ({ mapConfig }) => {
     if (!mapConfig || !mapConfig.type || !mapRef.current) return
 
     const map = mapRef.current
-    
+
     // Limpar camadas anteriores
     Object.values(layersRef.current).forEach((layer) => {
       if (layer) map.removeLayer(layer)
@@ -59,9 +59,10 @@ export const MapaAdmin = ({ mapConfig }) => {
 
     // 1. Desenhar o caminho percorrido
     const coordinates = history.map((h) => [
-      h.position.latitude,
-      h.position.longitude
+      h.position.latitude,   // primeiro: latitude
+      h.position.longitude   // segundo: longitude
     ])
+
 
     if (coordinates.length > 0) {
       const polyline = L.polyline(coordinates, {
@@ -125,7 +126,7 @@ export const MapaAdmin = ({ mapConfig }) => {
   const carregarEDesenharRota = async (map, routeId) => {
     try {
       const routeData = await routeService.getRouteById(routeId)
-      
+
       if (routeData && routeData.coordinates) {
         const coordinates = routeData.coordinates.map((coord) => [
           coord.latitude,
