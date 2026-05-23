@@ -59,8 +59,8 @@ export const MapaAdmin = ({ mapConfig }) => {
 
     // 1. Desenhar o caminho percorrido
     const coordinates = history.map((h) => [
-      h.position.latitude,   // primeiro: latitude
-      h.position.longitude   // segundo: longitude
+      h.position.longitude,
+      h.position.latitude
     ])
 
 
@@ -107,8 +107,8 @@ export const MapaAdmin = ({ mapConfig }) => {
 
     // Converter coordenadas da rota para formato Leaflet
     const coordinates = routeData.coordinates.map((coord) => [
-      coord.latitude,
-      coord.longitude
+      coord.longitude,
+      coord.latitude
     ])
 
     if (coordinates.length > 0) {
@@ -129,8 +129,8 @@ export const MapaAdmin = ({ mapConfig }) => {
 
       if (routeData && routeData.coordinates) {
         const coordinates = routeData.coordinates.map((coord) => [
-          coord.latitude,
-          coord.longitude
+          coord.longitude,
+          coord.latitude
         ])
 
         if (coordinates.length > 0) {
