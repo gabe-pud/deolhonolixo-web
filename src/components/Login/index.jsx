@@ -101,7 +101,7 @@ export const Login = () => {
         </form>
 
         {/* Link */}
-        <p className="mt-6 text-center font-semibold">
+        {/* <p className="mt-6 text-center font-semibold">
           Ainda não tem uma conta?{" "}
 
           <Link
@@ -110,7 +110,7 @@ export const Login = () => {
           >
             Faça o registro
           </Link>
-        </p>
+        </p> */}
 
       </section>
 
