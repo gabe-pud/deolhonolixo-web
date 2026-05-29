@@ -65,12 +65,7 @@ export const Mapa = ({ bairroSelecionado }) => {
         center={[-23.9967, -46.4332]}
         zoom={13}
         style={{ width: "100%", height: "100%" }}
-        whenCreated={(mapInstance) => {
-          mapRef.current = mapInstance
-          if (selectedFeature) {
-            fitFeatureBounds(mapInstance, selectedFeature)
-          }
-        }}
+        ref={mapRef}
       >
         <TileLayer
           attribution='© OpenStreetMap contributors'
