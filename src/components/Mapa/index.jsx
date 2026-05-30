@@ -1,24 +1,69 @@
 ﻿import { MapContainer, TileLayer, GeoJSON } from "react-leaflet"
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import L from "leaflet"
-import { bairrosGeoJson } from "../bairrosGeoJson"
+import { urbanGeometryService } from "../../services/urbanGeometryService"
 
-function isColetaHoje(props) {
+const normalizeText = (value = "") =>
+  String(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+
+const dayMatchers = [
+  { index: 0, patterns: ["domingo", "dom"] },
+  { index: 1, patterns: ["segunda", "seg"] },
+  { index: 2, patterns: ["terca", "ter"] },
+  { index: 3, patterns: ["quarta", "qua"] },
+  { index: 4, patterns: ["quinta", "qui"] },
+  { index: 5, patterns: ["sexta", "sex"] },
+  { index: 6, patterns: ["sabado", "sab"] }
+]
+
+const dayToIndex = (day) => {
+  if (typeof day === "number" && day >= 0 && day <= 6) {
+    return day
+  }
+
+  const normalizedDay = normalizeText(day)
+  const matchedDay = dayMatchers.find(({ patterns }) =>
+    patterns.some((pattern) => normalizedDay.includes(pattern))
+  )
+
+  return matchedDay ? matchedDay.index : undefined
+}
+
+const parseCollectionTime = (time) => {
+  if (!time) return { hour: 0, minute: 0 }
+
+  const [hourPart = "0", minutePart = "0"] = String(time).split(":")
+  const hour = Number.parseInt(hourPart, 10)
+  const minute = Number.parseInt(minutePart, 10)
+
+  if (Number.isNaN(hour) || Number.isNaN(minute)) {
+    return { hour: 0, minute: 0 }
+  }
+
+  return { hour, minute }
+}
+
+function isColetaHoje(props, urbanGeometrySelecionada) {
   const hoje = new Date()
   const diaSemana = hoje.getDay()
-  const diasMap = {
-    0: "Domingo",
-    1: "Segunda",
-    2: "Terça",
-    3: "Quarta",
-    4: "Quinta",
-    5: "Sexta",
-    6: "Sábado"
-  }
-  const dias = props?.Dias
-  if (!dias) return false
-  const diasText = Array.isArray(dias) ? dias.join(" ") : String(dias)
-  return diasText.toLowerCase().includes(diasMap[diaSemana].toLowerCase())
+  const horaAtualEmMinutos = hoje.getHours() * 60 + hoje.getMinutes()
+
+  const collectionDays = urbanGeometrySelecionada?.collectionDays || props?.Dias || []
+  const normalizedDays = (Array.isArray(collectionDays) ? collectionDays : [collectionDays])
+    .map(dayToIndex)
+    .filter((day) => day !== undefined)
+
+  if (normalizedDays.length === 0) return false
+
+  const collectionTime = urbanGeometrySelecionada?.collectionTime || props?.Horário
+  const { hour, minute } = parseCollectionTime(collectionTime)
+  const collectionTimeInMinutes = hour * 60 + minute
+
+  return normalizedDays.includes(diaSemana) && horaAtualEmMinutos <= collectionTimeInMinutes
 }
 
 function formatDias(dias) {
@@ -26,21 +71,147 @@ function formatDias(dias) {
   return Array.isArray(dias) ? dias.join(", ") : String(dias)
 }
 
-const normalizeBairro = (value = "") =>
-  String(value)
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim()
+const parseGeometry = (geometryValue) => {
+  if (!geometryValue) return null
 
-export const Mapa = ({ bairroSelecionado }) => {
+  if (typeof geometryValue === "string") {
+    try {
+      return JSON.parse(geometryValue)
+    } catch {
+      return null
+    }
+  }
+
+  return geometryValue
+}
+
+const isCoordinatePair = (value) =>
+  Array.isArray(value) &&
+  value.length >= 2 &&
+  Number.isFinite(Number(value[0])) &&
+  Number.isFinite(Number(value[1]))
+
+const closeRingIfNeeded = (ring) => {
+  if (!Array.isArray(ring) || ring.length < 3) {
+    return ring
+  }
+
+  const first = ring[0]
+  const last = ring[ring.length - 1]
+
+  if (!isCoordinatePair(first) || !isCoordinatePair(last)) {
+    return ring
+  }
+
+  const isClosed = Number(first[0]) === Number(last[0]) && Number(first[1]) === Number(last[1])
+
+  return isClosed ? ring : [...ring, first]
+}
+
+const toGeoJsonGeometry = (rawGeometry) => {
+  if (!rawGeometry) return null
+
+  if (rawGeometry.type && rawGeometry.coordinates) {
+    return rawGeometry
+  }
+
+  if (!Array.isArray(rawGeometry) || rawGeometry.length === 0) {
+    return null
+  }
+
+  if (isCoordinatePair(rawGeometry[0])) {
+    return {
+      type: "Polygon",
+      coordinates: [closeRingIfNeeded(rawGeometry)]
+    }
+  }
+
+  if (Array.isArray(rawGeometry[0]) && isCoordinatePair(rawGeometry[0][0])) {
+    return {
+      type: "Polygon",
+      coordinates: rawGeometry.map(closeRingIfNeeded)
+    }
+  }
+
+  return null
+}
+
+const buildFeatureFromUrbanGeometry = (urbanGeometry) => {
+  if (!urbanGeometry) return null
+
+  const parsedGeometry = parseGeometry(urbanGeometry.geometry)
+  const geometry = toGeoJsonGeometry(parsedGeometry)
+
+  if (!geometry) return null
+
+  if (geometry.type === "Feature") {
+    return {
+      ...geometry,
+      properties: {
+        ...(geometry.properties || {}),
+        Bairro: urbanGeometry.name,
+        Dias: urbanGeometry.collectionDays,
+        Período: urbanGeometry.collectionPeriod,
+        Horário: urbanGeometry.collectionTime
+      }
+    }
+  }
+
+  return {
+    type: "Feature",
+    geometry,
+    properties: {
+      Bairro: urbanGeometry.name,
+      Dias: urbanGeometry.collectionDays,
+      Período: urbanGeometry.collectionPeriod,
+      Horário: urbanGeometry.collectionTime
+    }
+  }
+}
+
+export const Mapa = ({ bairroSelecionado, urbanGeometrySelecionada }) => {
   const mapRef = useRef(null)
+  const [fallbackUrbanGeometry, setFallbackUrbanGeometry] = useState(null)
 
-  const selectedFeature = bairroSelecionado
-    ? bairrosGeoJson.features.find(
-        (f) => normalizeBairro(f.properties.Bairro) === normalizeBairro(bairroSelecionado)
-      )
-    : null
+  const isMatchingBairro = (urbanGeometry) => {
+    if (!urbanGeometry || !bairroSelecionado) return false
+    return normalizeText(urbanGeometry.name) === normalizeText(bairroSelecionado)
+  }
+
+  useEffect(() => {
+    let isActive = true
+
+    setFallbackUrbanGeometry(null)
+
+    const loadUrbanGeometry = async () => {
+      if (urbanGeometrySelecionada || !bairroSelecionado) {
+        return
+      }
+
+      try {
+        const data = await urbanGeometryService.getUrbanGeometryByName(bairroSelecionado)
+        if (isActive && isMatchingBairro(data)) {
+          setFallbackUrbanGeometry(data)
+        }
+      } catch {
+        if (isActive) {
+          setFallbackUrbanGeometry(null)
+        }
+      }
+    }
+
+    loadUrbanGeometry()
+
+    return () => {
+      isActive = false
+    }
+  }, [bairroSelecionado, urbanGeometrySelecionada])
+
+  const activeUrbanGeometry = isMatchingBairro(urbanGeometrySelecionada)
+    ? urbanGeometrySelecionada
+    : fallbackUrbanGeometry
+
+  const selectedFeature = buildFeatureFromUrbanGeometry(activeUrbanGeometry)
 
   const fitFeatureBounds = (map, feature) => {
     const layer = L.geoJSON(feature)
@@ -65,12 +236,7 @@ export const Mapa = ({ bairroSelecionado }) => {
         center={[-23.9967, -46.4332]}
         zoom={13}
         style={{ width: "100%", height: "100%" }}
-        whenCreated={(mapInstance) => {
-          mapRef.current = mapInstance
-          if (selectedFeature) {
-            fitFeatureBounds(mapInstance, selectedFeature)
-          }
-        }}
+        ref={mapRef}
       >
         <TileLayer
           attribution='© OpenStreetMap contributors'
@@ -79,10 +245,10 @@ export const Mapa = ({ bairroSelecionado }) => {
 
         {selectedGeojson && (
           <GeoJSON
-            key={bairroSelecionado}
+            key={`${bairroSelecionado}-${activeUrbanGeometry?.id || activeUrbanGeometry?.name || "sem-geometria"}`}
             data={selectedGeojson}
             style={(feature) => {
-              const ativo = isColetaHoje(feature.properties)
+              const ativo = isColetaHoje(feature.properties, activeUrbanGeometry)
               return {
                 color: ativo ? "#7083D9" : "#A6A6A6",
                 weight: 2,
@@ -96,10 +262,10 @@ export const Mapa = ({ bairroSelecionado }) => {
               const dias = formatDias(props.Dias)
               const popupContent = `
                 <div>
-                  <b>${props.Bairro}</b><br>
+                  <b>${props.Bairro || ""}</b><br>
                   <strong>Dias:</strong> ${dias}<br>
-                  <strong>Período:</strong> ${props.Período}<br>
-                  <strong>Horário:</strong> ${props.Horário}
+                  <strong>Período:</strong> ${props.Período || ""}<br>
+                  <strong>Horário:</strong> ${props.Horário || ""}
                 </div>
               `
               layer.bindPopup(popupContent)

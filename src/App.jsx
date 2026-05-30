@@ -25,6 +25,7 @@ import {
 
 function App() {
   const [bairroSelecionado, setBairroSelecionado] = useState("")
+  const [urbanGeometrySelecionada, setUrbanGeometrySelecionada] = useState(null)
 
   return (
     <AuthProvider>
@@ -41,9 +42,14 @@ function App() {
                   <Aside
                     bairroSelecionado={bairroSelecionado}
                     setBairroSelecionado={setBairroSelecionado}
+                    urbanGeometrySelecionada={urbanGeometrySelecionada}
+                    setUrbanGeometrySelecionada={setUrbanGeometrySelecionada}
                   />
 
-                  <Mapa bairroSelecionado={bairroSelecionado} />
+                  <Mapa
+                    bairroSelecionado={bairroSelecionado}
+                    urbanGeometrySelecionada={urbanGeometrySelecionada}
+                  />
 
                   <MenuHamburguer />
                 </Container>

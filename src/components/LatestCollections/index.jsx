@@ -66,25 +66,31 @@ function calcularUltimasColetas(bairro) {
 }
 
 export const LatestCollections = ({ bairro }) => {
-    if (!bairro) return (
-        <div className="bg-[#FCAE1D] rounded-[14px] ml-[28px] mr-[28px] my-[39px] mb-0 p-[24px] text-[20px] font-bold shadow-[10px_10px_10px_-3px_rgba(0,0,0,0.3)] tracking-tight">
-            <div className="flex flex-col items-center gap-[10px]">
-                <p className="text-black">Últimas coletas</p>
-                <p className="text-[#5C5C5C]">
-                    Selecione um bairro
-                </p>
-            </div>
-        </div>
-    )
-
     const [datas, setDatas] = useState([])
 
     useEffect(() => {
+        if (!bairro) {
+            return
+        }
+
         const atualizar = () => setDatas(calcularUltimasColetas(bairro))
         atualizar()
         const interval = setInterval(atualizar, 60000) // atualiza a cada minuto
         return () => clearInterval(interval)
     }, [bairro])
+
+    if (!bairro) {
+        return (
+            <div className="bg-[#FCAE1D] rounded-[14px] ml-[28px] mr-[28px] my-[39px] mb-0 p-[24px] text-[20px] font-bold shadow-[10px_10px_10px_-3px_rgba(0,0,0,0.3)] tracking-tight">
+                <div className="flex flex-col items-center gap-[10px]">
+                    <p className="text-black">Últimas coletas</p>
+                    <p className="text-[#5C5C5C]">
+                        Selecione um bairro
+                    </p>
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div className="bg-[#FCAE1D] rounded-[14px] ml-[28px] mr-[28px] my-[39px] mb-0 p-[24px] text-[20px] font-bold shadow-[10px_10px_10px_-3px_rgba(0,0,0,0.3)] tracking-tight">

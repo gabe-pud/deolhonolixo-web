@@ -1,65 +1,87 @@
 import { useEffect, useState } from "react"
+import { urbanGeometryService } from "../../services/urbanGeometryService"
 
-const horariosColeta = {
-  manhaSegQuaSex: {
-    bairros: ["Aviação", "Boqueirão", "Tupi", "Canto do Forte", "Guilhermina", "Sítio do Campo", "aviacao", "boqueirao", "tupi", "canto do forte", "guilhermina", "sitio do campo"],
-    horaInicio: 8,
-    horaFim: 12,
-    dias: [1, 3, 5] // segunda, quarta, sexta
-  },
-  tardeSegQuaSex: {
-    bairros: ["Solemar", "Esmeralda", "Flórida", "Melvi", "Princesa", "Ribeirópolis", "Samambaia", "Cidade da Criança", "Sítio do Campo", "solemar", "esmeralda", "florida", "melvi", "princesa", "ribeiropolis", "samambaia", "cidade da crianca", "sitio do campo"],
-    horaInicio: 13,
-    horaFim: 18,
-    dias: [1, 3, 5]
-  },
-  manhaTerQui: {
-    bairros: ["Caiçara", "Maracanã", "Mirim", "Ocian", "Real", "caicara", "maracana", "mirim", "ocian", "real"],
-    horaInicio: 8,
-    horaFim: 12,
-    dias: [2, 4] // terça, quinta
-  },
-  tardeTerQui: {
-    bairros: ["Anhanguera", "Antártica", "Glória", "Nova Mirim", "Quietude", "Santa Marina", "Tupiry", "Vila Sônia", "Sítio do Campo", "anhanguera", "antartica", "gloria", "nova mirim", "quietude", "santa marina", "tupiry", "vila sonia", "sitio do campo"],
-    horaInicio: 13,
-    horaFim: 18,
-    dias: [2, 4]
+const normalizeText = (value) =>
+  String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+
+const dayMatchers = [
+  { index: 0, patterns: ["domingo", "dom"] },
+  { index: 1, patterns: ["segunda", "seg"] },
+  { index: 2, patterns: ["terca", "ter"] },
+  { index: 3, patterns: ["quarta", "qua"] },
+  { index: 4, patterns: ["quinta", "qui"] },
+  { index: 5, patterns: ["sexta", "sex"] },
+  { index: 6, patterns: ["sabado", "sab"] }
+]
+
+const dayToIndex = (day) => {
+  if (typeof day === "number" && day >= 0 && day <= 6) {
+    return day
+  }
+
+  const normalizedDay = normalizeText(day)
+  const matchedDay = dayMatchers.find(({ patterns }) =>
+    patterns.some((pattern) => normalizedDay.includes(pattern))
+  )
+
+  return matchedDay ? matchedDay.index : undefined
+}
+
+const parseCollectionTime = (time) => {
+  if (!time) return { hour: 0, minute: 0, label: "--:--" }
+
+  const [hourPart = "0", minutePart = "0"] = String(time).split(":")
+  const hour = Number.parseInt(hourPart, 10)
+  const minute = Number.parseInt(minutePart, 10)
+
+  if (Number.isNaN(hour) || Number.isNaN(minute)) {
+    return { hour: 0, minute: 0, label: "--:--" }
+  }
+
+  return {
+    hour,
+    minute,
+    label: `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`
   }
 }
 
-function calcularProximaColeta(bairro) {
-  if (!bairro) return { data: "--/--/----", hora: "--:--" }
+function calcularProximaColeta(urbanGeometry) {
+  if (!urbanGeometry) return { data: "--/--/----", hora: "--:--" }
 
+  const collectionDays = Array.isArray(urbanGeometry.collectionDays) ? urbanGeometry.collectionDays : []
+  const normalizedDays = collectionDays
+    .map(dayToIndex)
+    .filter((day) => day !== undefined)
+
+  if (normalizedDays.length === 0) {
+    return { data: "--/--/----", hora: "--:--" }
+  }
+
+  const { hour, minute, label } = parseCollectionTime(urbanGeometry.collectionTime)
   const agora = new Date()
-  const diaSemana = agora.getDay() // 0=domingo, 1=segunda...
+  const diaAtual = agora.getDay()
   const horaAtual = agora.getHours()
+  const minutoAtual = agora.getMinutes()
 
-  const grupo = Object.values(horariosColeta).find(g => g.bairros.includes(bairro))
-  if (!grupo) return { data: "--/--/----", hora: "--:--" }
+  const hojeTemColeta = normalizedDays.includes(diaAtual)
+  const horarioAtualEmMinutos = horaAtual * 60 + minutoAtual
+  const horarioColetaEmMinutos = hour * 60 + minute
 
-  // Se hoje é dia de coleta
-  if (grupo.dias.includes(diaSemana)) {
-    // Se está dentro do período da coleta
-    if (horaAtual >= grupo.horaInicio && horaAtual <= grupo.horaFim) {
-      return {
-        data: agora.toLocaleDateString("pt-BR"),
-        hora: `${String(grupo.horaInicio).padStart(2, "0")}:00`
-      }
-    }
-    // Se ainda não começou hoje
-    if (horaAtual < grupo.horaInicio) {
-      return {
-        data: agora.toLocaleDateString("pt-BR"),
-        hora: `${String(grupo.horaInicio).padStart(2, "0")}:00`
-      }
+  if (hojeTemColeta && horarioAtualEmMinutos <= horarioColetaEmMinutos) {
+    return {
+      data: agora.toLocaleDateString("pt-BR"),
+      hora: label
     }
   }
 
-  // Caso contrário, calcular próximo dia válido
   let diasAteProxima = 0
   for (let i = 1; i <= 7; i++) {
-    const futuroDia = (diaSemana + i) % 7
-    if (grupo.dias.includes(futuroDia)) {
+    const futuroDia = (diaAtual + i) % 7
+    if (normalizedDays.includes(futuroDia)) {
       diasAteProxima = i
       break
     }
@@ -70,19 +92,73 @@ function calcularProximaColeta(bairro) {
 
   return {
     data: proximaData.toLocaleDateString("pt-BR"),
-    hora: `${String(grupo.horaInicio).padStart(2, "0")}:00`
+    hora: label
   }
 }
 
-export const CollectionForecast = ({ bairro }) => {
+export const CollectionForecast = ({ bairro, urbanGeometry: urbanGeometryProp }) => {
+  const [urbanGeometry, setUrbanGeometry] = useState(null)
   const [forecast, setForecast] = useState({ data: "--/--/----", hora: "--:--" })
 
   useEffect(() => {
-    const atualizar = () => setForecast(calcularProximaColeta(bairro))
+    let isActive = true
+
+    const loadUrbanGeometry = async () => {
+      if (urbanGeometryProp) {
+        setUrbanGeometry(urbanGeometryProp)
+        setForecast(calcularProximaColeta(urbanGeometryProp))
+        return
+      }
+
+      if (!bairro) {
+        setUrbanGeometry(null)
+        setForecast({ data: "--/--/----", hora: "--:--" })
+        return
+      }
+
+      try {
+        const data = await urbanGeometryService.getUrbanGeometryByName(bairro)
+
+        if (!isActive) {
+          return
+        }
+
+        setUrbanGeometry(data)
+        setForecast(calcularProximaColeta(data))
+      } catch {
+        if (!isActive) {
+          return
+        }
+
+        setUrbanGeometry(null)
+        setForecast({ data: "--/--/----", hora: "--:--" })
+      }
+    }
+
+    loadUrbanGeometry()
+
+    return () => {
+      isActive = false
+    }
+  }, [bairro, urbanGeometryProp])
+
+  useEffect(() => {
+    if (!urbanGeometry) {
+      return
+    }
+
+    const atualizar = () => {
+      setForecast(calcularProximaColeta(urbanGeometry))
+    }
+
     atualizar()
+
     const interval = setInterval(atualizar, 60000) // atualiza a cada minuto
-    return () => clearInterval(interval)
-  }, [bairro])
+
+    return () => {
+      clearInterval(interval)
+    }
+  }, [urbanGeometry])
 
   return (
     <div className="bg-[#7083D9] rounded-[14px] flex flex-col gap-[22px] ml-[28px] mr-[28px] text-white p-[24px] text-[30px] shadow-[10px_10px_10px_-3px_rgba(0,0,0,0.3)] tracking-tight">

@@ -1,46 +1,105 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from "react"
+import { urbanGeometryService } from "../../services/urbanGeometryService"
 
-export const ColetaLixoInfo = ({ bairro }) => {
-  const [dados, setDados] = useState(null);
-  const [carregando, setCarregando] = useState(false);
+const formatBairroName = (name) => {
+  if (!name) return ""
 
-  // O useEffect "observa" a prop 'bairro'. 
-  // Sempre que 'bairro' mudar, esta função roda de novo!
+  return String(name)
+    .split(" ")
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ")
+}
+
+const formatCollectionDays = (days) => {
+  if (!Array.isArray(days) || days.length === 0) {
+    return "Não informado"
+  }
+
+  return days.join(", ")
+}
+
+export const ColetaLixoInfo = ({ bairro, urbanGeometry: urbanGeometryProp }) => {
+  const [urbanGeometry, setUrbanGeometry] = useState(urbanGeometryProp || null)
+  const [carregando, setCarregando] = useState(false)
+  const [erro, setErro] = useState("")
+
   useEffect(() => {
-    if (!bairro) return;
+    let ativo = true
 
-    setCarregando(true);
+    const carregarUrbanGeometry = async () => {
+      if (urbanGeometryProp) {
+        setUrbanGeometry(urbanGeometryProp)
+        setErro("")
+        return
+      }
 
-    // Simulando uma busca de dados (pode ser um fetch de API ou busca em JSON)
-    const buscarDadosColeta = () => {
-      // Exemplo de base de dados local
-      const agenda = {
-        "Canto do Forte": { dias: "Segunda, Quarta e Sexta", horario: "19:00" },
-        "Boqueirão": { dias: "Terça, Quinta e Sábado", horario: "08:00" },
-        "Guilhermina": { dias: "Segunda, Quarta e Sexta", horario: "07:30" },
-        // ... outros bairros
-      };
+      if (!bairro) {
+        setUrbanGeometry(null)
+        setErro("")
+        return
+      }
 
-      // Simula um atraso de rede de 500ms
-      setTimeout(() => {
-        setDados(agenda[bairro] || { dias: "Não cadastrado", horario: "--:--" });
-        setCarregando(false);
-      }, 500);
-    };
+      setCarregando(true)
+      setErro("")
 
-    buscarDadosColeta();
-  }, [bairro]); // <-- O "pulo do gato": o efeito depende da variável 'bairro'
+      try {
+        const data = await urbanGeometryService.getUrbanGeometryByName(bairro)
 
-  if (carregando) return <p className="text-center mt-4">Buscando horários...</p>;
-  if (!dados) return null;
+        if (!ativo) {
+          return
+        }
+
+        setUrbanGeometry(data)
+      } catch {
+        if (!ativo) {
+          return
+        }
+
+        setUrbanGeometry(null)
+        setErro("Não foi possível carregar as informações da coleta.")
+      } finally {
+        if (ativo) {
+          setCarregando(false)
+        }
+      }
+    }
+
+    carregarUrbanGeometry()
+
+    return () => {
+      ativo = false
+    }
+  }, [bairro, urbanGeometryProp])
+
+  if (carregando) {
+    return <p className="text-center mt-4">Buscando informações da coleta...</p>
+  }
+
+  if (erro) {
+    return <p className="text-center mt-4 text-red-500">{erro}</p>
+  }
+
+  if (!urbanGeometry) {
+    return null
+  }
 
   return (
     <div className="mt-8 p-6 bg-gray-50 rounded-xl border border-gray-200 max-w-[500px] mx-auto">
-      <h2 className="text-2xl font-bold text-[#7083D9] mb-4">{bairro}</h2>
+      <h2 className="text-2xl font-bold text-[#7083D9] mb-4">
+        {formatBairroName(urbanGeometry.name || bairro)}
+      </h2>
       <div className="space-y-2">
-        <p className="text-gray-700"><strong>📅 Dias:</strong> {dados.dias}</p>
-        <p className="text-gray-700"><strong>⏰ Horário aprox:</strong> {dados.horario}</p>
+        <p className="text-gray-700">
+          <strong>📅 Dias:</strong> {formatCollectionDays(urbanGeometry.collectionDays)}
+        </p>
+        <p className="text-gray-700">
+          <strong>⏰ Período:</strong> {urbanGeometry.collectionPeriod || "Não informado"}
+        </p>
+        <p className="text-gray-700">
+          <strong>🕒 Horário:</strong> {urbanGeometry.collectionTime || "Não informado"}
+        </p>
       </div>
     </div>
-  );
-};
+  )
+}
