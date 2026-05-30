@@ -1,63 +1,92 @@
 import { useState, useEffect, useRef } from "react"
-
-const bairros = [
-  { label: "Canto do Forte", value: "canto do forte" },
-  { label: "Boqueirão", value: "boqueirao" },
-  { label: "Guilhermina", value: "guilhermina" },
-  { label: "Aviação", value: "aviacao" },
-  { label: "Tupi", value: "tupi" },
-  { label: "Ocian", value: "ocian" },
-  { label: "Mirim", value: "mirim" },
-  { label: "Maracanã", value: "maracana" },
-  { label: "Caiçara", value: "caicara" },
-  { label: "Real", value: "real" },
-  { label: "Flórida", value: "florida" },
-  { label: "Solemar", value: "solemar" },
-  { label: "Militar", value: "militar" },
-  { label: "Cidade da Criança", value: "cidade da crianca" },
-  { label: "Princesa", value: "princesa" },
-  { label: "Imperador", value: "imperador" },
-  { label: "Melvi", value: "melvi" },
-  { label: "Samambaia", value: "samambaia" },
-  { label: "Esmeralda", value: "esmeralda" },
-  { label: "Ribeirópolis", value: "ribeiropolis" },
-  { label: "Andaraguá", value: "andaragua" },
-  { label: "Nova Mirim", value: "nova mirim" },
-  { label: "Anhanguera", value: "anhanguera" },
-  { label: "Quietude", value: "quietude" },
-  { label: "Tupiry", value: "tupiry" },
-  { label: "Santa Marina", value: "santa marina" },
-  { label: "Antártica", value: "antartica" },
-  { label: "Vila Sônia", value: "vila sonia" },
-  { label: "Glória", value: "gloria" },
-  { label: "Sítio do Campo", value: "sitio do campo" },
-  { label: "Xixová", value: "xixova" },
-  { label: "Serra do Mar", value: "serra do mar" }
-]
+import { urbanGeometryService } from "../../services/urbanGeometryService"
 
 export const Dropdown = ({ onSelect }) => {
   const [isOpen, setIsOpen] = useState(false)
-  const [selectedBairro, setSelectedBairro] = useState("Selecione um bairro...")
+  const [urbanGeometries, setUrbanGeometries] = useState([])
+  const [selectedUrbanGeometry, setSelectedUrbanGeometry] = useState(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState("")
   const dropdownRef = useRef(null)
 
-  // Fechar dropdown ao clicar fora
+  const formatBairroName = (name) => {
+    if (!name) return ""
+
+    return name
+      .split(" ")
+      .filter(Boolean)
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ")
+  }
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsOpen(false)
       }
     }
+
     document.addEventListener("mousedown", handleClickOutside)
+
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
-  const handleSelect = (bairro) => {
-    setSelectedBairro(bairro.label)
+  useEffect(() => {
+    let isActive = true
+
+    const loadUrbanGeometries = async () => {
+      setIsLoading(true)
+      setError("")
+
+      try {
+        const data = await urbanGeometryService.getAllUrbanGeometry()
+
+        if (!isActive) {
+          return
+        }
+
+        setUrbanGeometries(Array.isArray(data) ? data : [])
+      } catch {
+        if (!isActive) {
+          return
+        }
+
+        setError("Não foi possível carregar os bairros.")
+        setUrbanGeometries([])
+      } finally {
+        if (isActive) {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    loadUrbanGeometries()
+
+    return () => {
+      isActive = false
+    }
+  }, [])
+
+  const handleSelect = async (geometry) => {
     setIsOpen(false)
-    if (onSelect) {
-      onSelect(bairro.value)
+
+    try {
+      const selectedGeometry = await urbanGeometryService.getUrbanGeometryByName(geometry.name)
+      setSelectedUrbanGeometry(selectedGeometry)
+
+      if (onSelect) {
+        onSelect(selectedGeometry.name, selectedGeometry)
+      }
+    } catch {
+      setSelectedUrbanGeometry(geometry)
+
+      if (onSelect) {
+        onSelect(geometry.name, geometry)
+      }
     }
   }
+
+  const selectedLabel = selectedUrbanGeometry ? formatBairroName(selectedUrbanGeometry.name) : "Selecione um bairro..."
 
   return (
     <div className="relative inline-block text-left" ref={dropdownRef}>
@@ -65,19 +94,37 @@ export const Dropdown = ({ onSelect }) => {
         onClick={() => setIsOpen(!isOpen)}
         className="ml-[28px] mr-[28px] mt-[60px] w-[500px] bg-transparent border border-[#A7A7A7] rounded-[14px] text-[24px] font-medium leading-[140%] flex items-center py-[22px] justify-center hover:border-[#7083D9] cursor-pointer tracking-tight"
       >
-        {selectedBairro}
+        {selectedLabel}
       </button>
 
       {isOpen && (
         <div className="absolute ml-[28px] mr-[28px] mt-2 w-[500px] rounded-[14px] shadow-lg bg-white ring-1 ring-[#7083D9] ring-opacity-5 focus:outline-none z-[100] max-h-[350px] overflow-y-auto no-scrollbar custom-scrollbar">
           <div className="py-1 px-1">
-            {bairros.map((bairro) => (
+            {isLoading && (
+              <p className="px-4 py-3 text-center text-[16px] text-gray-500">
+                Carregando bairros...
+              </p>
+            )}
+
+            {!isLoading && error && (
+              <p className="px-4 py-3 text-center text-[16px] text-red-500">
+                {error}
+              </p>
+            )}
+
+            {!isLoading && !error && urbanGeometries.length === 0 && (
+              <p className="px-4 py-3 text-center text-[16px] text-gray-500">
+                Nenhum bairro encontrado.
+              </p>
+            )}
+
+            {!isLoading && !error && urbanGeometries.map((geometry) => (
               <button
-                key={bairro.value}
-                onClick={() => handleSelect(bairro)}
-                className="w-full block rounded-[14px] py-2 text-[18px] text-center font-medium text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
+                key={geometry.id}
+                onClick={() => handleSelect(geometry)}
+                className="w-full block rounded-[14px] px-3 py-3 text-center font-medium text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
               >
-                {bairro.label}
+                <span className="block text-[18px] text-center">{formatBairroName(geometry.name)}</span>
               </button>
             ))}
           </div>
