@@ -1,4 +1,4 @@
-import api from './api'
+import api, { clearAuthToken, setAuthToken } from './api'
 
 export const authService = {
 
@@ -9,11 +9,13 @@ export const authService = {
                 username,
                 email,
                 password,
-                confirmPassword
+                confirmPassword,
+                role: ["ROLE_ADMIN"]
             })
 
             if (response.data.token) {
                 localStorage.setItem('token', response.data.token)
+                setAuthToken(response.data.token)
             }
 
             // Só salva user se existir
@@ -41,6 +43,7 @@ export const authService = {
 
             if (response.data.token) {
                 localStorage.setItem('token', response.data.token)
+                setAuthToken(response.data.token)
             }
 
             // Só salva user se existir
@@ -61,6 +64,7 @@ export const authService = {
     logout() {
         localStorage.removeItem('token')
         localStorage.removeItem('user')
+        clearAuthToken()
     },
 
     getToken() {

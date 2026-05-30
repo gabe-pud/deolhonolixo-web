@@ -10,6 +10,19 @@ const api = axios.create({
   }
 })
 
+export const setAuthToken = (token) => {
+  if (token) {
+    api.defaults.headers.common.Authorization = `Bearer ${token}`
+    return
+  }
+
+  delete api.defaults.headers.common.Authorization
+}
+
+export const clearAuthToken = () => {
+  delete api.defaults.headers.common.Authorization
+}
+
 // Interceptor para adicionar token JWT
 api.interceptors.request.use(
   (config) => {
