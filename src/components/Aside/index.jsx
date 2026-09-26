@@ -17,7 +17,7 @@ export const Aside = ({ bairroSelecionado, setBairroSelecionado, urbanGeometrySe
       <p className="text-center text-[32px] mt-[24px] font-semibold mb-0 pb-0 tracking-tight">
         A coleta chegará no bairro em:
       </p>
-      <Time bairro={bairroSelecionado} />
+      <Time urbanGeometry={urbanGeometrySelecionada} />
       <CollectionForecast bairro={bairroSelecionado} urbanGeometry={urbanGeometrySelecionada} />
       <Alert />
       <LatestCollections bairro={bairroSelecionado} />
